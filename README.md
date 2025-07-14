@@ -1,4 +1,4 @@
-# 🌥️ SmalBlu Cloud Cost Calculator
+# Cloud Cost Calculator
 
 A sleek, responsive cloud savings calculator built with **Next.js**, **TypeScript**, and **Tailwind CSS**. Designed to estimate annual savings and ROI.
 
