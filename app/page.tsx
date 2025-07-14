@@ -1,101 +1,227 @@
-import Image from "next/image";
+/* === app/page.tsx === */
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+
+type FormData = {
+  monthlyCloudSpend: number;
+  industry: string;
+  primaryWorkload: string;
+  currentUtilization: number;
+  manualOptimizationHours: number;
+  engineerHourlyCost: number;
+  sustainabilityGoals: boolean;
+};
+
+type ResultData = {
+  annualSpend: number;
+  totalSavings: number;
+  savingsPercentage: number;
+  monthlyNetSavings: number;
+  roi: number;
+  paybackMonths: number;
+  carbonSaved: number;
+  smalBluCost: number;
+  netSavings: number;
+  breakdown: {
+    infrastructure: number;
+    database: number;
+    storage: number;
+    crossLayer: number;
+    productivity: number;
+    sustainability: number;
+  };
+};
+
+export default function Page() {
+  const [form, setForm] = useState<FormData>({
+    monthlyCloudSpend: 1000,
+    industry: "technology",
+    primaryWorkload: "oltp",
+    currentUtilization: 60,
+    manualOptimizationHours: 10,
+    engineerHourlyCost: 50,
+    sustainabilityGoals: false,
+  });
+
+  const [result, setResult] = useState<ResultData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const target = e.target;
+    const { name, value, type } = target;
+    const isCheckbox = type === "checkbox";
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: isCheckbox
+        ? (target as HTMLInputElement).checked
+        : type === "number"
+        ? +value
+        : value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const json = await res.json();
+
+      if (!json.success) {
+        setError(json.error || "Something went wrong.");
+        setResult(null);
+      } else {
+        setResult(json.data);
+      }
+    } catch (err) {
+      setError("Network error.");
+      setResult(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <main className="container">
+      <h1 className="text-2xl font-bold mb-6">SmalBlu Cloud Cost Calculator</h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="label">Monthly Cloud Spend ($)</label>
+          <input
+            type="number"
+            name="monthlyCloudSpend"
+            className="input"
+            value={form.monthlyCloudSpend}
+            onChange={handleChange}
+            required
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+
+        <div>
+          <label className="label">Industry</label>
+          <select
+            name="industry"
+            className="input"
+            value={form.industry}
+            onChange={handleChange}
+          >
+            <option value="technology">Technology</option>
+            <option value="fintech">Fintech</option>
+            <option value="ecommerce">E-commerce</option>
+            <option value="analytics">Analytics</option>
+            <option value="healthcare">Healthcare</option>
+            <option value="retail">Retail</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="label">Primary Workload</label>
+          <select
+            name="primaryWorkload"
+            className="input"
+            value={form.primaryWorkload}
+            onChange={handleChange}
+          >
+            <option value="oltp">OLTP</option>
+            <option value="analytics">Analytics</option>
+            <option value="mixed">Mixed</option>
+            <option value="aiml">AI/ML</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="label">Current Utilization (%)</label>
+          <input
+            type="number"
+            name="currentUtilization"
+            className="input"
+            value={form.currentUtilization}
+            onChange={handleChange}
+            min={0}
+            max={100}
+            required
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+        </div>
+
+        <div>
+          <label className="label">Manual Optimization Hours/Month</label>
+          <input
+            type="number"
+            name="manualOptimizationHours"
+            className="input"
+            value={form.manualOptimizationHours}
+            onChange={handleChange}
+            required
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
+        </div>
+
+        <div>
+          <label className="label">Engineer Hourly Cost ($)</label>
+          <input
+            type="number"
+            name="engineerHourlyCost"
+            className="input"
+            value={form.engineerHourlyCost}
+            onChange={handleChange}
+            required
           />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="sustainabilityGoals"
+            checked={form.sustainabilityGoals}
+            onChange={handleChange}
+          />
+          <label>Sustainability goals?</label>
+        </div>
+
+        <button type="submit" className="btn" disabled={loading}>
+          {loading ? "Calculating..." : "Calculate Savings"}
+        </button>
+      </form>
+
+      {error && <p className="text-red-600 mt-4">{error}</p>}
+
+      {result && (
+        <div className="mt-8 bg-gray-50 p-4 rounded-lg shadow">
+          <h2 className="text-lg font-semibold mb-2">Results</h2>
+          <p>
+            <strong>Annual Spend:</strong> ${result.annualSpend.toFixed(2)}
+          </p>
+          <p>
+            <strong>Total Savings:</strong> ${result.totalSavings.toFixed(2)}
+          </p>
+          <p>
+            <strong>ROI:</strong> {result.roi.toFixed(2)}%
+          </p>
+          <p>
+            <strong>Net Monthly Savings:</strong> $
+            {result.monthlyNetSavings.toFixed(2)}
+          </p>
+          <p>
+            <strong>Payback in:</strong> {result.paybackMonths.toFixed(1)}{" "}
+            months
+          </p>
+          <p>
+            <strong>Carbon Saved:</strong> {result.carbonSaved.toFixed(2)} tons
+          </p>
+        </div>
+      )}
+    </main>
   );
 }
